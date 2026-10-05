@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>夜店行动 · Nightclub Op</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:#fff;-webkit-user-select:none;user-select:none;
+    touch-action:none;-webkit-tap-highlight-color:transparent;
+  }
+  #game{position:fixed;inset:0;}
+  canvas{display:block;}
+
+  .screen{
+    position:fixed;inset:0;z-index:100;
+    display:none;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:32px 24px;text-align:center;
+    background:radial-gradient(circle at 50% 30%, #1a0505 0%, #000 70%);
+    overflow-y:auto;
+  }
+  .screen.show{display:flex;}
+  .screen.hide{display:none !important;}
+
+  .screen h1{
+    font-size:32px;font-weight:900;letter-spacing:6px;
+    color:#ff2b2b;margin-bottom:6px;
+    text-shadow:0 0 20px #ff0000,0 0 50px #8b0000;
+  }
+  .screen h2{
+    font-size:15px;font-weight:700;letter-spacing:3px;
+    color:#a88;margin-bottom:26px;
+  }
+
+  #disclaimerScreen .warn{
+    font-size:22px;font-weight:900;letter-spacing:4px;
+    color:#ffcc00;margin-bottom:18px;
+    text-shadow:0 0 16px #ff8800;
+    animation:blinkWarn 1.2s infinite;
+  }
+  @keyframes blinkWarn{0%,100%{opacity:1;}50%{opacity:.55;}}
+  #disclaimerScreen .box{
+    max-width:600px;font-size:13px;line-height:2;
+    color:#ccc;text-align:left;
+    border:1px solid rgba(255,80,80,.3);
+    border-radius:12px;padding:20px 22px;
+    background:rgba(30,0,0,.4);
+    margin-bottom:22px;
+  }
+  #disclaimerScreen .box b{color:#ff8888;}
+  #disclaimerScreen .box .em{color:#ffcc00;}
+
+  #homeScreen .title{
+    font-size:44px;font-weight:900;letter-spacing:10px;
+    color:#fff;margin-bottom:4px;
+    text-shadow:0 0 24px #ff0000,0 0 60px #8b0000,3px 3px 0 #300;
+  }
+  #homeScreen .sub{
+    font-size:12px;letter-spacing:5px;color:#a55;
+    margin-bottom:40px;
+  }
+  #homeScreen .menu{
+    display:flex;flex-direction:column;gap:12px;
+    width:100%;max-width:320px;
+  }
+  .menuBtn{
+    padding:15px 20px;font-size:16px;font-weight:800;
+    letter-spacing:3px;color:#fff;cursor:pointer;
+    background:linear-gradient(180deg, #2a0808, #140303);
+    border:1px solid rgba(255,80,80,.4);
+    border-radius:12px;
+    transition:transform .1s, background .15s, box-shadow .15s;
+    text-align:center;
+  }
+  .menuBtn:active{
+    transform:scale(.97);
+    background:linear-gradient(180deg, #4a0a0a, #240505);
+    box-shadow:0 0 24px rgba(255,60,60,.5);
+  }
+  .menuBtn.primary{
+    background:linear-gradient(180deg, #7a1414, #3a0606);
+    border-color:rgba(255,120,120,.7);
+  }
+  .menuBtn small{
+    display:block;font-size:11px;letter-spacing:1px;
+    color:#999;margin-top:4px;font-weight:500;
+  }
+  #homeScreen .footer{
+    position:absolute;bottom:20px;left:0;right:0;
+    font-size:11px;color:#555;letter-spacing:1px;
+    padding:12px;cursor:default;
+  }
+
+  .topBar{
+    position:fixed;top:0;left:0;right:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;z-index:105;
+    background:linear-gradient(180deg,rgba(0,0,0,.95),rgba(0,0,0,0));
+  }
+  .backBtn{
+    font-size:14px;font-weight:800;letter-spacing:2px;
+    color:#ff9999;background:rgba(255,60,60,.12);
+    border:1px solid rgba(255,80,80,.4);
+    padding:8px 16px;border-radius:20px;cursor:pointer;
+  }
+  .backBtn:active{transform:scale(.95);}
+
+  #devScreen{
+    background:radial-gradient(circle at 50% 30%, #001a0a 0%, #000 70%);
+    font-family:"SF Mono","Consolas","Courier New",monospace;
+  }
+  #devScreen h1{color:#0f0;text-shadow:0 0 20px #0f0;font-size:22px;letter-spacing:3px;}
+  #devScreen .subtitle{font-size:12px;color:#0a0;letter-spacing:2px;margin-bottom:26px;}
+  .devTerminal{
+    width:100%;max-width:500px;
+    background:#000;border:1px solid #0f0;
+    border-radius:8px;padding:16px 18px;
+    text-align:left;font-size:13px;
+    box-shadow:0 0 30px rgba(0,255,0,.2);
+  }
+  .devLine{color:#0a0;margin-bottom:8px;line-height:1.6;}
+  .devLine .prompt{color:#0f0;margin-right:6px;}
+  #devInput{
+    width:100%;background:transparent;border:none;outline:none;
+    color:#0f0;font-family:inherit;font-size:15px;
+    letter-spacing:3px;padding:6px 0;margin-top:6px;
+    border-bottom:1px solid #0a0;
+  }
+  #devInput::placeholder{color:#050;letter-spacing:3px;}
+  #devMsg{
+    margin-top:14px;color:#0f0;font-size:12px;
+    line-height:1.7;min-height:20px;letter-spacing:1px;
+  }
+  #devMsg.err{color:#f44;}
+  #devMsg.ok{color:#0f0;text-shadow:0 0 8px #0f0;}
+
+  #musicScreen .importRow{
+    width:100%;max-width:560px;
+    display:flex;gap:10px;align-items:center;
+    padding-top:70px;margin-bottom:16px;
+  }
+  .impBtn{
+    flex:1;
+    padding:14px 18px;font-size:14px;font-weight:800;
+    letter-spacing:2px;cursor:pointer;text-align:center;
+    background:linear-gradient(180deg,#1a3a5a,#0a1a2a);
+    border:1px solid rgba(120,200,255,.45);
+    color:#bfe4ff;border-radius:10px;
+    transition:transform .1s, background .15s;
+  }
+  .impBtn:active{transform:scale(.97);}
+  .impBtn.ghost{
+    background:transparent;border:1px dashed rgba(255,255,255,.25);
+    color:#aaa;flex:0 0 auto;padding:14px 16px;font-size:12px;
+  }
+
+  #musicScreen .list{
+    width:100%;max-width:560px;
+    display:flex;flex-direction:column;gap:8px;
+    padding-bottom:140px;
+  }
+  .trk{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    text-align:left;
+    transition:background .2s, border-color .2s;
+  }
+  .trk.playing{
+    background:linear-gradient(90deg, rgba(120,200,255,.14), rgba(80,160,255,.05));
+    border-color:rgba(120,200,255,.5);
+    box-shadow:0 0 16px rgba(120,200,255,.2);
+  }
+  .trkIcon{
+    width:38px;height:38px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;border-radius:9px;
+    background:rgba(0,0,0,.5);
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .trk.playing .trkIcon{
+    background:linear-gradient(135deg,#3b9cff,#1a5fc0);
+    border-color:#bfe4ff;
+    animation:trkSpin 3s linear infinite;
+  }
+  @keyframes trkSpin{0%{transform:rotate(0);}100%{transform:rotate(360deg);}}
+  .trkInfo{flex:1;min-width:0;}
+  .trkName{
+    font-size:13px;font-weight:800;color:#fff;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:3px;
+  }
+  .trkMeta{font-size:11px;color:#888;letter-spacing:.5px;}
+  .trk.playing .trkMeta{color:#bfe4ff;}
+  .trkActions{display:flex;gap:6px;flex-shrink:0;}
+  .iconBtn{
+    width:34px;height:34px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;cursor:pointer;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);
+    color:#fff;
+    transition:transform .1s, background .15s;
+  }
+  .iconBtn:active{transform:scale(.9);}
+  .iconBtn.danger{color:#ff8888;}
+  .iconBtn.danger:active{background:rgba(255,60,60,.3);}
+
+  .emptyTip{
+    text-align:center;color:#666;font-size:13px;
+    line-height:2;padding:40px 20px;
+  }
+  .emptyTip b{color:#ff9999;}
+
+  #musicBar{
+    position:fixed;bottom:0;left:0;right:0;z-index:110;
+    padding:14px 18px 18px;
+    background:linear-gradient(0deg,rgba(0,0,0,.98),rgba(0,0,0,.85));
+    border-top:1px solid rgba(120,200,255,.2);
+    display:none;
+  }
+  #musicScreen:not(.hide) #musicBar{display:block;}
+  .mbRow1{
+    display:flex;align-items:center;gap:12px;
+    margin-bottom:10px;
+  }
+  #mbName{
+    flex:1;font-size:12px;font-weight:700;color:#bfe4ff;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .mbRow2{
+    display:flex;align-items:center;gap:10px;
+  }
+  .mbBtn{
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;cursor:pointer;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.15);
+    color:#fff;flex-shrink:0;
+  }
+  .mbBtn:active{transform:scale(.92);}
+  .mbBtn.play{
+    background:linear-gradient(135deg,#3b9cff,#1a5fc0);
+    border-color:#bfe4ff;
+    width:46px;height:46px;font-size:20px;
+  }
+  #mbVol,#gmVol{
+    -webkit-appearance:none;appearance:none;
+    height:4px;border-radius:2px;
+    background:rgba(255,255,255,.15);
+    outline:none;
+  }
+  #mbVol{flex:1;}
+  #mbVol::-webkit-slider-thumb,#gmVol::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:#3b9cff;
+    box-shadow:0 0 8px rgba(60,160,255,.8);
+    cursor:pointer;
+  }
+  .volLabel{font-size:11px;color:#888;width:36px;text-align:right;}
+
+  #gameMusic{
+    position:fixed;right:16px;top:56px;z-index:12;
+    display:none;flex-direction:column;gap:6px;
+    align-items:flex-end;
+    pointer-events:none;
+  }
+  #gameMusic.on{display:flex;}
+  .gmBtn{
+    width:42px;height:42px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;cursor:pointer;
+    background:rgba(0,0,0,.55);
+    border:1px solid rgba(120,200,255,.4);
+    color:#bfe4ff;
+    backdrop-filter:blur(4px);
+    pointer-events:auto;
+  }
+  .gmBtn:active{transform:scale(.92);}
+  #gmPanel{
+    display:none;flex-direction:column;gap:8px;
+    padding:10px;border-radius:12px;
+    background:rgba(0,0,0,.82);
+    border:1px solid rgba(120,200,255,.3);
+    backdrop-filter:blur(6px);
+    width:210px;
+    pointer-events:auto;
+  }
+  #gmPanel.show{display:flex;}
+  #gmTitle{font-size:11px;color:#bfe4ff;font-weight:800;letter-spacing:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gmRow{display:flex;align-items:center;gap:8px;}
+  .gmMini{
+    width:34px;height:34px;border-radius:8px;
+    display:flex;align-items:
